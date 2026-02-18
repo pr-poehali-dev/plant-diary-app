@@ -1,0 +1,6 @@
+{
+  "community-api": "https://functions.poehali.dev/abe21026-6cfd-4879-942d-ac95d76a683e",
+  "reminders-api": "https://functions.poehali.dev/a9514799-1627-49fc-b2f7-b9a15af3b5ca",
+  "plants-api": "https://functions.poehali.dev/b9cbe11e-1ea2-4600-8248-bcd1f3631702",
+  "journal-api": "https://functions.poehali.dev/871a5cd3-99eb-4f6c-af5e-0754891ad6a0"
+}

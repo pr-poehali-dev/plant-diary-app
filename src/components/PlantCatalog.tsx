@@ -1,59 +1,34 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import Icon from "@/components/ui/icon";
+import { plantsApi, type Plant } from "@/lib/api";
 
-interface Plant {
-  id: number;
-  name: string;
-  species: string;
-  emoji: string;
-  waterFrequency: string;
-  light: string;
-  humidity: number;
-  lastWatered: string;
-  nextWater: string;
-  health: number;
-  notes: string;
+function formatDate(dateStr: string | null): string {
+  if (!dateStr) return "—";
+  const d = new Date(dateStr);
+  const day = d.getDate();
+  const months = ["янв", "фев", "мар", "апр", "мая", "июн", "июл", "авг", "сен", "окт", "ноя", "дек"];
+  return `${day} ${months[d.getMonth()]}`;
 }
 
-const PLANTS: Plant[] = [
-  {
-    id: 1, name: "Монстера", species: "Monstera deliciosa", emoji: "🪴",
-    waterFrequency: "Раз в 5 дней", light: "Рассеянный свет", humidity: 70,
-    lastWatered: "15 фев", nextWater: "20 фев", health: 90,
-    notes: "Появился новый лист, активный рост"
-  },
-  {
-    id: 2, name: "Фикус Бенджамина", species: "Ficus benjamina", emoji: "🌿",
-    waterFrequency: "Раз в 7 дней", light: "Яркий свет", humidity: 60,
-    lastWatered: "12 фев", nextWater: "19 фев", health: 75,
-    notes: "Немного опадают листья, проверить сквозняки"
-  },
-  {
-    id: 3, name: "Кактус Эхинопсис", species: "Echinopsis oxygona", emoji: "🌵",
-    waterFrequency: "Раз в 14 дней", light: "Прямой свет", humidity: 30,
-    lastWatered: "5 фев", nextWater: "19 фев", health: 95,
-    notes: "Готовится к цветению"
-  },
-  {
-    id: 4, name: "Розмарин", species: "Rosmarinus officinalis", emoji: "🌱",
-    waterFrequency: "Раз в 3 дня", light: "Прямой свет", humidity: 45,
-    lastWatered: "16 фев", nextWater: "19 фев", health: 85,
-    notes: "Хороший аромат, можно использовать в кулинарии"
-  },
-  {
-    id: 5, name: "Алоэ Вера", species: "Aloe vera", emoji: "🪷",
-    waterFrequency: "Раз в 10 дней", light: "Яркий рассеянный", humidity: 35,
-    lastWatered: "10 фев", nextWater: "20 фев", health: 92,
-    notes: "Появились детки, скоро пересадка"
-  },
-];
+function formatWaterFrequency(days: number): string {
+  return `Раз в ${days} дней`;
+}
 
 const PlantCatalog = () => {
+  const [plants, setPlants] = useState<Plant[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedPlant, setSelectedPlant] = useState<Plant | null>(null);
+
+  useEffect(() => {
+    plantsApi.getAll().then((data) => {
+      setPlants(data);
+      setLoading(false);
+    }).catch(() => setLoading(false));
+  }, []);
 
   return (
     <div className="animate-fade-in">
@@ -68,7 +43,11 @@ const PlantCatalog = () => {
         </Button>
       </div>
 
-      {selectedPlant ? (
+      {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <Icon name="Loader2" size={24} className="animate-spin text-primary" />
+        </div>
+      ) : selectedPlant ? (
         <Card className="border-0 shadow-md bg-white/80 backdrop-blur animate-scale-in">
           <CardContent className="pt-6">
             <button
@@ -88,7 +67,7 @@ const PlantCatalog = () => {
               <div className="bg-blue-50 rounded-lg p-3 text-center">
                 <Icon name="Droplets" size={18} className="text-blue-600 mx-auto mb-1" />
                 <p className="text-xs text-muted-foreground">Полив</p>
-                <p className="text-sm font-medium">{selectedPlant.waterFrequency}</p>
+                <p className="text-sm font-medium">{formatWaterFrequency(selectedPlant.water_frequency_days)}</p>
               </div>
               <div className="bg-amber-50 rounded-lg p-3 text-center">
                 <Icon name="Sun" size={18} className="text-amber-600 mx-auto mb-1" />
@@ -123,15 +102,15 @@ const PlantCatalog = () => {
             </div>
 
             <div className="flex gap-2 text-sm text-muted-foreground">
-              <span>💧 Полив: {selectedPlant.lastWatered}</span>
+              <span>💧 Полив: {formatDate(selectedPlant.last_watered)}</span>
               <span>→</span>
-              <span className="font-medium text-foreground">Следующий: {selectedPlant.nextWater}</span>
+              <span className="font-medium text-foreground">Следующий: {formatDate(selectedPlant.next_water)}</span>
             </div>
           </CardContent>
         </Card>
       ) : (
         <div className="space-y-2">
-          {PLANTS.map((plant) => (
+          {plants.map((plant) => (
             <Card
               key={plant.id}
               className="border-0 shadow-sm bg-white/80 backdrop-blur cursor-pointer hover:shadow-md transition-all hover:-translate-y-0.5"
@@ -145,7 +124,7 @@ const PlantCatalog = () => {
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
                   <Badge variant="secondary" className="text-xs bg-blue-50 text-blue-700">
-                    💧 {plant.nextWater}
+                    💧 {formatDate(plant.next_water)}
                   </Badge>
                   <div className="w-8 h-8 rounded-full bg-green-50 flex items-center justify-center">
                     <span className="text-xs font-semibold text-green-700">{plant.health}</span>

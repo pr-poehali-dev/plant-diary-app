@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Icon from "@/components/ui/icon";
 import PlantCalendar from "@/components/PlantCalendar";
 import PlantCatalog from "@/components/PlantCatalog";
@@ -6,6 +6,7 @@ import Reminders from "@/components/Reminders";
 import PlantJournal from "@/components/PlantJournal";
 import PhotoGallery from "@/components/PhotoGallery";
 import Community from "@/components/Community";
+import { plantsApi, remindersApi } from "@/lib/api";
 
 type Tab = "calendar" | "plants" | "reminders" | "journal" | "gallery" | "community";
 
@@ -22,6 +23,15 @@ const HERO_IMAGE = "https://cdn.poehali.dev/projects/b8bfb12b-7328-4f2c-9ee7-63c
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState<Tab>("calendar");
+  const [plantsCount, setPlantsCount] = useState(0);
+  const [todayRemindersCount, setTodayRemindersCount] = useState(0);
+
+  useEffect(() => {
+    plantsApi.getAll().then((data) => setPlantsCount(data.length)).catch(() => {});
+    remindersApi.getAll().then((data) => {
+      setTodayRemindersCount(data.filter((r) => r.urgent).length);
+    }).catch(() => {});
+  }, []);
 
   const renderContent = () => {
     switch (activeTab) {
@@ -73,8 +83,8 @@ const Index = () => {
                 <Icon name="Sprout" size={22} className="text-primary" />
               </div>
               <div className="flex-1">
-                <p className="text-sm font-medium">5 растений под присмотром</p>
-                <p className="text-xs text-muted-foreground">2 задачи на сегодня</p>
+                <p className="text-sm font-medium">{plantsCount} растений под присмотром</p>
+                <p className="text-xs text-muted-foreground">{todayRemindersCount} задачи на сегодня</p>
               </div>
               <div className="text-right">
                 <p className="text-xs text-muted-foreground">18 фев 2026</p>
