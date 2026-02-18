@@ -2,6 +2,7 @@ import json
 import os
 import psycopg2
 from datetime import date, datetime
+from decimal import Decimal
 
 def get_conn():
     return psycopg2.connect(os.environ['DATABASE_URL'])
@@ -9,7 +10,12 @@ def get_conn():
 def json_serial(obj):
     if isinstance(obj, (date, datetime)):
         return obj.isoformat()
+    if isinstance(obj, Decimal):
+        return float(obj)
     raise TypeError(f"Type {type(obj)} not serializable")
+
+COLS = ['id', 'name', 'species', 'emoji', 'water_frequency_days', 'light', 'humidity', 'health', 'notes', 'last_watered', 'created_at', 'variety', 'purchase_date', 'price', 'photo_url']
+SELECT_COLS = ', '.join(COLS)
 
 def handler(event, context):
     """API для управления растениями: получение списка, добавление, обновление и полив"""
@@ -26,12 +32,11 @@ def handler(event, context):
         if method == 'GET':
             plant_id = params.get('id')
             if plant_id:
-                cur.execute("SELECT id, name, species, emoji, water_frequency_days, light, humidity, health, notes, last_watered, created_at FROM plants WHERE id = %s", (int(plant_id),))
+                cur.execute(f"SELECT {SELECT_COLS} FROM plants WHERE id = %s", (int(plant_id),))
                 row = cur.fetchone()
                 if not row:
                     return {'statusCode': 404, 'headers': headers, 'body': json.dumps({'error': 'Растение не найдено'})}
-                cols = ['id', 'name', 'species', 'emoji', 'water_frequency_days', 'light', 'humidity', 'health', 'notes', 'last_watered', 'created_at']
-                plant = dict(zip(cols, row))
+                plant = dict(zip(COLS, row))
                 next_water = None
                 if plant['last_watered'] and plant['water_frequency_days']:
                     from datetime import timedelta
@@ -39,12 +44,11 @@ def handler(event, context):
                 plant['next_water'] = next_water
                 return {'statusCode': 200, 'headers': headers, 'body': json.dumps(plant, default=json_serial)}
             else:
-                cur.execute("SELECT id, name, species, emoji, water_frequency_days, light, humidity, health, notes, last_watered, created_at FROM plants ORDER BY created_at DESC")
+                cur.execute(f"SELECT {SELECT_COLS} FROM plants ORDER BY created_at DESC")
                 rows = cur.fetchall()
-                cols = ['id', 'name', 'species', 'emoji', 'water_frequency_days', 'light', 'humidity', 'health', 'notes', 'last_watered', 'created_at']
                 plants = []
                 for row in rows:
-                    p = dict(zip(cols, row))
+                    p = dict(zip(COLS, row))
                     if p['last_watered'] and p['water_frequency_days']:
                         from datetime import timedelta
                         p['next_water'] = (p['last_watered'] + timedelta(days=p['water_frequency_days'])).isoformat()
@@ -70,10 +74,14 @@ def handler(event, context):
             light = body.get('light', '')
             humidity = body.get('humidity', 50)
             notes = body.get('notes', '')
+            variety = body.get('variety') or None
+            purchase_date = body.get('purchase_date') or None
+            price = body.get('price') or None
+            photo_url = body.get('photo_url') or None
 
             cur.execute(
-                "INSERT INTO plants (name, species, emoji, water_frequency_days, light, humidity, notes, last_watered) VALUES (%s, %s, %s, %s, %s, %s, %s, CURRENT_DATE) RETURNING id",
-                (name, species, emoji, int(water_freq), light, int(humidity), notes)
+                "INSERT INTO plants (name, species, emoji, water_frequency_days, light, humidity, notes, last_watered, variety, purchase_date, price, photo_url) VALUES (%s, %s, %s, %s, %s, %s, %s, CURRENT_DATE, %s, %s, %s, %s) RETURNING id",
+                (name, species, emoji, int(water_freq), light, int(humidity), notes, variety, purchase_date, price, photo_url)
             )
             new_id = cur.fetchone()[0]
             conn.commit()
@@ -84,7 +92,7 @@ def handler(event, context):
             plant_id = body.get('id')
             fields = []
             values = []
-            for key in ['name', 'species', 'emoji', 'water_frequency_days', 'light', 'humidity', 'health', 'notes']:
+            for key in ['name', 'species', 'emoji', 'water_frequency_days', 'light', 'humidity', 'health', 'notes', 'variety', 'purchase_date', 'price', 'photo_url']:
                 if key in body:
                     fields.append(f"{key} = %s")
                     values.append(body[key])

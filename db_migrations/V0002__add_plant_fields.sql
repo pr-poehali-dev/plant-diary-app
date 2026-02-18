@@ -1,0 +1,5 @@
+
+ALTER TABLE plants ADD COLUMN variety VARCHAR(150);
+ALTER TABLE plants ADD COLUMN purchase_date DATE;
+ALTER TABLE plants ADD COLUMN price NUMERIC(10,2);
+ALTER TABLE plants ADD COLUMN photo_url TEXT;

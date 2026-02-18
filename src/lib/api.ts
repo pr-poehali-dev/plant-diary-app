@@ -27,6 +27,10 @@ export interface Plant {
   notes: string;
   last_watered: string | null;
   next_water: string | null;
+  variety: string | null;
+  purchase_date: string | null;
+  price: number | null;
+  photo_url: string | null;
   created_at: string;
 }
 

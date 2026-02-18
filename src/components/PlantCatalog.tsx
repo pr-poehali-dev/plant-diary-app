@@ -30,7 +30,7 @@ const PlantCatalog = () => {
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
     name: "", species: "", emoji: "🌱", water_frequency_days: 7,
-    light: "", humidity: 50, notes: "",
+    light: "", humidity: 50, notes: "", variety: "", purchase_date: "", price: "", photo_url: "",
   });
 
   useEffect(() => {
@@ -47,9 +47,16 @@ const PlantCatalog = () => {
   const handleSubmit = async () => {
     if (!form.name.trim()) return;
     setSaving(true);
-    await plantsApi.create(form);
+    const data = {
+      ...form,
+      price: form.price ? Number(form.price) : null,
+      purchase_date: form.purchase_date || null,
+      photo_url: form.photo_url || null,
+      variety: form.variety || null,
+    };
+    await plantsApi.create(data);
     setShowForm(false);
-    setForm({ name: "", species: "", emoji: "🌱", water_frequency_days: 7, light: "", humidity: 50, notes: "" });
+    setForm({ name: "", species: "", emoji: "🌱", water_frequency_days: 7, light: "", humidity: 50, notes: "", variety: "", purchase_date: "", price: "", photo_url: "" });
     setSaving(false);
     loadPlants();
   };
@@ -105,6 +112,50 @@ const PlantCatalog = () => {
                 value={form.species}
                 onChange={(e) => setForm({ ...form, species: e.target.value })}
               />
+            </div>
+
+            <div>
+              <p className="text-sm font-medium mb-1">Сорт</p>
+              <Input
+                placeholder="Variegata, Thai Constellation..."
+                value={form.variety}
+                onChange={(e) => setForm({ ...form, variety: e.target.value })}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <p className="text-sm font-medium mb-1">Дата покупки</p>
+                <Input
+                  type="date"
+                  value={form.purchase_date}
+                  onChange={(e) => setForm({ ...form, purchase_date: e.target.value })}
+                />
+              </div>
+              <div>
+                <p className="text-sm font-medium mb-1">Стоимость ₽</p>
+                <Input
+                  type="number"
+                  min={0}
+                  placeholder="0"
+                  value={form.price}
+                  onChange={(e) => setForm({ ...form, price: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div>
+              <p className="text-sm font-medium mb-1">Фото (ссылка)</p>
+              <Input
+                placeholder="https://example.com/photo.jpg"
+                value={form.photo_url}
+                onChange={(e) => setForm({ ...form, photo_url: e.target.value })}
+              />
+              {form.photo_url && (
+                <div className="mt-2 rounded-lg overflow-hidden h-32 bg-secondary">
+                  <img src={form.photo_url} alt="Превью" className="w-full h-full object-cover" onError={(e) => (e.currentTarget.style.display = "none")} />
+                </div>
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-3">
@@ -202,10 +253,18 @@ const PlantCatalog = () => {
               <Icon name="ArrowLeft" size={16} />
               Назад к списку
             </button>
+            {selectedPlant.photo_url && (
+              <div className="rounded-xl overflow-hidden h-40 mb-4 -mx-2">
+                <img src={selectedPlant.photo_url} alt={selectedPlant.name} className="w-full h-full object-cover" />
+              </div>
+            )}
             <div className="text-center mb-4">
               <span className="text-5xl">{selectedPlant.emoji}</span>
               <h3 className="text-xl font-semibold mt-2">{selectedPlant.name}</h3>
               <p className="text-sm text-muted-foreground italic">{selectedPlant.species}</p>
+              {selectedPlant.variety && (
+                <p className="text-xs text-primary font-medium mt-0.5">Сорт: {selectedPlant.variety}</p>
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-3 mb-4">
@@ -245,6 +304,23 @@ const PlantCatalog = () => {
                 {selectedPlant.notes}
               </p>
             </div>
+
+            {(selectedPlant.purchase_date || selectedPlant.price) && (
+              <div className="flex gap-3 text-sm text-muted-foreground mb-3">
+                {selectedPlant.purchase_date && (
+                  <span className="flex items-center gap-1">
+                    <Icon name="ShoppingBag" size={14} className="text-muted-foreground" />
+                    {formatDate(selectedPlant.purchase_date)}
+                  </span>
+                )}
+                {selectedPlant.price && (
+                  <span className="flex items-center gap-1">
+                    <Icon name="Banknote" size={14} className="text-muted-foreground" />
+                    {selectedPlant.price} ₽
+                  </span>
+                )}
+              </div>
+            )}
 
             <div className="flex gap-2 text-sm text-muted-foreground">
               <span>💧 Полив: {formatDate(selectedPlant.last_watered)}</span>
