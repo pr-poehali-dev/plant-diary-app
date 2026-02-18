@@ -50,7 +50,7 @@ const Index = () => {
           <div className="flex items-center justify-between mb-1">
             <div>
               <h1 className="text-2xl font-bold text-foreground">
-                🌿 GreenDiary
+                🌿 MyPlants
               </h1>
               <p className="text-sm text-muted-foreground font-handwriting text-lg">
                 Ежедневник растениевода
@@ -113,7 +113,7 @@ const Index = () => {
       <footer className="max-w-lg mx-auto px-4 pb-8 pt-4">
         <div className="text-center">
           <p className="text-xs text-muted-foreground">
-            🌱 GreenDiary — заботьтесь о растениях с любовью
+            🌱 MyPlants — заботьтесь о растениях с любовью
           </p>
         </div>
       </footer>
