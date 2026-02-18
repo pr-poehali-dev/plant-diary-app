@@ -1,0 +1,163 @@
+import { useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import Icon from "@/components/ui/icon";
+
+interface Plant {
+  id: number;
+  name: string;
+  species: string;
+  emoji: string;
+  waterFrequency: string;
+  light: string;
+  humidity: number;
+  lastWatered: string;
+  nextWater: string;
+  health: number;
+  notes: string;
+}
+
+const PLANTS: Plant[] = [
+  {
+    id: 1, name: "Монстера", species: "Monstera deliciosa", emoji: "🪴",
+    waterFrequency: "Раз в 5 дней", light: "Рассеянный свет", humidity: 70,
+    lastWatered: "15 фев", nextWater: "20 фев", health: 90,
+    notes: "Появился новый лист, активный рост"
+  },
+  {
+    id: 2, name: "Фикус Бенджамина", species: "Ficus benjamina", emoji: "🌿",
+    waterFrequency: "Раз в 7 дней", light: "Яркий свет", humidity: 60,
+    lastWatered: "12 фев", nextWater: "19 фев", health: 75,
+    notes: "Немного опадают листья, проверить сквозняки"
+  },
+  {
+    id: 3, name: "Кактус Эхинопсис", species: "Echinopsis oxygona", emoji: "🌵",
+    waterFrequency: "Раз в 14 дней", light: "Прямой свет", humidity: 30,
+    lastWatered: "5 фев", nextWater: "19 фев", health: 95,
+    notes: "Готовится к цветению"
+  },
+  {
+    id: 4, name: "Розмарин", species: "Rosmarinus officinalis", emoji: "🌱",
+    waterFrequency: "Раз в 3 дня", light: "Прямой свет", humidity: 45,
+    lastWatered: "16 фев", nextWater: "19 фев", health: 85,
+    notes: "Хороший аромат, можно использовать в кулинарии"
+  },
+  {
+    id: 5, name: "Алоэ Вера", species: "Aloe vera", emoji: "🪷",
+    waterFrequency: "Раз в 10 дней", light: "Яркий рассеянный", humidity: 35,
+    lastWatered: "10 фев", nextWater: "20 фев", health: 92,
+    notes: "Появились детки, скоро пересадка"
+  },
+];
+
+const PlantCatalog = () => {
+  const [selectedPlant, setSelectedPlant] = useState<Plant | null>(null);
+
+  return (
+    <div className="animate-fade-in">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg font-semibold flex items-center gap-2">
+          <Icon name="Leaf" size={20} className="text-primary" />
+          Мои растения
+        </h2>
+        <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground">
+          <Icon name="Plus" size={16} className="mr-1" />
+          Добавить
+        </Button>
+      </div>
+
+      {selectedPlant ? (
+        <Card className="border-0 shadow-md bg-white/80 backdrop-blur animate-scale-in">
+          <CardContent className="pt-6">
+            <button
+              onClick={() => setSelectedPlant(null)}
+              className="flex items-center gap-1 text-sm text-muted-foreground mb-4 hover:text-foreground transition-colors"
+            >
+              <Icon name="ArrowLeft" size={16} />
+              Назад к списку
+            </button>
+            <div className="text-center mb-4">
+              <span className="text-5xl">{selectedPlant.emoji}</span>
+              <h3 className="text-xl font-semibold mt-2">{selectedPlant.name}</h3>
+              <p className="text-sm text-muted-foreground italic">{selectedPlant.species}</p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              <div className="bg-blue-50 rounded-lg p-3 text-center">
+                <Icon name="Droplets" size={18} className="text-blue-600 mx-auto mb-1" />
+                <p className="text-xs text-muted-foreground">Полив</p>
+                <p className="text-sm font-medium">{selectedPlant.waterFrequency}</p>
+              </div>
+              <div className="bg-amber-50 rounded-lg p-3 text-center">
+                <Icon name="Sun" size={18} className="text-amber-600 mx-auto mb-1" />
+                <p className="text-xs text-muted-foreground">Освещение</p>
+                <p className="text-sm font-medium">{selectedPlant.light}</p>
+              </div>
+              <div className="bg-cyan-50 rounded-lg p-3 text-center">
+                <Icon name="CloudRain" size={18} className="text-cyan-600 mx-auto mb-1" />
+                <p className="text-xs text-muted-foreground">Влажность</p>
+                <p className="text-sm font-medium">{selectedPlant.humidity}%</p>
+              </div>
+              <div className="bg-green-50 rounded-lg p-3 text-center">
+                <Icon name="Heart" size={18} className="text-green-600 mx-auto mb-1" />
+                <p className="text-xs text-muted-foreground">Здоровье</p>
+                <p className="text-sm font-medium">{selectedPlant.health}%</p>
+              </div>
+            </div>
+
+            <div className="mb-3">
+              <div className="flex justify-between text-sm mb-1">
+                <span className="text-muted-foreground">Состояние</span>
+                <span className="font-medium">{selectedPlant.health}%</span>
+              </div>
+              <Progress value={selectedPlant.health} className="h-2" />
+            </div>
+
+            <div className="bg-secondary/50 rounded-lg p-3 mb-3">
+              <p className="text-sm flex items-start gap-2">
+                <Icon name="NotebookPen" size={16} className="text-primary mt-0.5 shrink-0" />
+                {selectedPlant.notes}
+              </p>
+            </div>
+
+            <div className="flex gap-2 text-sm text-muted-foreground">
+              <span>💧 Полив: {selectedPlant.lastWatered}</span>
+              <span>→</span>
+              <span className="font-medium text-foreground">Следующий: {selectedPlant.nextWater}</span>
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-2">
+          {PLANTS.map((plant) => (
+            <Card
+              key={plant.id}
+              className="border-0 shadow-sm bg-white/80 backdrop-blur cursor-pointer hover:shadow-md transition-all hover:-translate-y-0.5"
+              onClick={() => setSelectedPlant(plant)}
+            >
+              <CardContent className="p-4 flex items-center gap-3">
+                <span className="text-3xl">{plant.emoji}</span>
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-medium">{plant.name}</h3>
+                  <p className="text-xs text-muted-foreground truncate">{plant.species}</p>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <Badge variant="secondary" className="text-xs bg-blue-50 text-blue-700">
+                    💧 {plant.nextWater}
+                  </Badge>
+                  <div className="w-8 h-8 rounded-full bg-green-50 flex items-center justify-center">
+                    <span className="text-xs font-semibold text-green-700">{plant.health}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default PlantCatalog;
