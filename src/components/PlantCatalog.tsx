@@ -3,8 +3,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import Icon from "@/components/ui/icon";
 import { plantsApi, type Plant } from "@/lib/api";
+
+const EMOJIS = ["🌱", "🪴", "🌿", "🌵", "🪷", "🌻", "🌺", "🌹", "🍀", "🌾"];
 
 function formatDate(dateStr: string | null): string {
   if (!dateStr) return "—";
@@ -22,13 +26,154 @@ const PlantCatalog = () => {
   const [plants, setPlants] = useState<Plant[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPlant, setSelectedPlant] = useState<Plant | null>(null);
+  const [showForm, setShowForm] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({
+    name: "", species: "", emoji: "🌱", water_frequency_days: 7,
+    light: "", humidity: 50, notes: "",
+  });
 
   useEffect(() => {
+    loadPlants();
+  }, []);
+
+  const loadPlants = () => {
     plantsApi.getAll().then((data) => {
       setPlants(data);
       setLoading(false);
     }).catch(() => setLoading(false));
-  }, []);
+  };
+
+  const handleSubmit = async () => {
+    if (!form.name.trim()) return;
+    setSaving(true);
+    await plantsApi.create(form);
+    setShowForm(false);
+    setForm({ name: "", species: "", emoji: "🌱", water_frequency_days: 7, light: "", humidity: 50, notes: "" });
+    setSaving(false);
+    loadPlants();
+  };
+
+  if (showForm) {
+    return (
+      <div className="animate-fade-in">
+        <button
+          onClick={() => setShowForm(false)}
+          className="flex items-center gap-1 text-sm text-muted-foreground mb-4 hover:text-foreground transition-colors"
+        >
+          <Icon name="ArrowLeft" size={16} />
+          Назад к списку
+        </button>
+
+        <Card className="border-0 shadow-md bg-white/80 backdrop-blur">
+          <CardContent className="pt-6 space-y-4">
+            <h3 className="text-lg font-semibold flex items-center gap-2">
+              <Icon name="Plus" size={18} className="text-primary" />
+              Новое растение
+            </h3>
+
+            <div>
+              <p className="text-sm font-medium mb-2">Иконка</p>
+              <div className="flex gap-2 flex-wrap">
+                {EMOJIS.map((e) => (
+                  <button
+                    key={e}
+                    onClick={() => setForm({ ...form, emoji: e })}
+                    className={`w-10 h-10 rounded-lg text-xl flex items-center justify-center transition-all ${
+                      form.emoji === e ? "bg-primary/15 ring-2 ring-primary" : "bg-secondary hover:bg-secondary/80"
+                    }`}
+                  >
+                    {e}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <p className="text-sm font-medium mb-1">Название</p>
+              <Input
+                placeholder="Монстера, Фикус..."
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+              />
+            </div>
+
+            <div>
+              <p className="text-sm font-medium mb-1">Вид (латынь)</p>
+              <Input
+                placeholder="Monstera deliciosa"
+                value={form.species}
+                onChange={(e) => setForm({ ...form, species: e.target.value })}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <p className="text-sm font-medium mb-1">Полив (дни)</p>
+                <Input
+                  type="number"
+                  min={1}
+                  max={60}
+                  value={form.water_frequency_days}
+                  onChange={(e) => setForm({ ...form, water_frequency_days: Number(e.target.value) })}
+                />
+              </div>
+              <div>
+                <p className="text-sm font-medium mb-1">Влажность %</p>
+                <Input
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={form.humidity}
+                  onChange={(e) => setForm({ ...form, humidity: Number(e.target.value) })}
+                />
+              </div>
+            </div>
+
+            <div>
+              <p className="text-sm font-medium mb-1">Освещение</p>
+              <div className="flex gap-2 flex-wrap">
+                {["Прямой свет", "Рассеянный свет", "Яркий свет", "Полутень", "Тень"].map((l) => (
+                  <button
+                    key={l}
+                    onClick={() => setForm({ ...form, light: l })}
+                    className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
+                      form.light === l ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
+                    }`}
+                  >
+                    {l}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <p className="text-sm font-medium mb-1">Заметки</p>
+              <Textarea
+                placeholder="Особенности ухода, наблюдения..."
+                value={form.notes}
+                onChange={(e) => setForm({ ...form, notes: e.target.value })}
+                rows={3}
+              />
+            </div>
+
+            <Button
+              onClick={handleSubmit}
+              disabled={!form.name.trim() || saving}
+              className="w-full bg-primary text-primary-foreground"
+            >
+              {saving ? (
+                <Icon name="Loader2" size={16} className="animate-spin mr-2" />
+              ) : (
+                <Icon name="Check" size={16} className="mr-2" />
+              )}
+              Добавить растение
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="animate-fade-in">
@@ -37,7 +182,7 @@ const PlantCatalog = () => {
           <Icon name="Leaf" size={20} className="text-primary" />
           Мои растения
         </h2>
-        <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground">
+        <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground" onClick={() => setShowForm(true)}>
           <Icon name="Plus" size={16} className="mr-1" />
           Добавить
         </Button>
