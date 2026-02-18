@@ -1,0 +1,1 @@
+{"tests": [{"name": "Upload requires image", "method": "POST", "path": "/", "body": {"image": ""}, "expectedStatus": 400, "expectedBody": {"error": "string"}, "bodyMatcher": "partial"}]}

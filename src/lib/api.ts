@@ -5,6 +5,7 @@ const API = {
   journal: urls["journal-api"],
   reminders: urls["reminders-api"],
   community: urls["community-api"],
+  upload: urls["upload-photo"],
 };
 
 async function request<T>(url: string, options?: RequestInit): Promise<T> {
@@ -124,6 +125,14 @@ export const communityApi = {
     request<{ id: number; success: boolean }>(API.community, {
       method: "POST",
       body: JSON.stringify(data),
+    }),
+};
+
+export const uploadApi = {
+  photo: (base64: string, contentType: string) =>
+    request<{ url: string; success: boolean }>(API.upload, {
+      method: "POST",
+      body: JSON.stringify({ image: base64, content_type: contentType }),
     }),
 };
 

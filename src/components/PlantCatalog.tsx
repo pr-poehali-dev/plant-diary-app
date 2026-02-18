@@ -6,7 +6,7 @@ import { Progress } from "@/components/ui/progress";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import Icon from "@/components/ui/icon";
-import { plantsApi, type Plant } from "@/lib/api";
+import { plantsApi, uploadApi, type Plant } from "@/lib/api";
 
 const EMOJIS = ["🌱", "🪴", "🌿", "🌵", "🪷", "🌻", "🌺", "🌹", "🍀", "🌾"];
 
@@ -28,6 +28,8 @@ const PlantCatalog = () => {
   const [selectedPlant, setSelectedPlant] = useState<Plant | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [form, setForm] = useState({
     name: "", species: "", emoji: "🌱", water_frequency_days: 7,
     light: "", humidity: 50, notes: "", variety: "", purchase_date: "", price: "", photo_url: "",
@@ -44,6 +46,25 @@ const PlantCatalog = () => {
     }).catch(() => setLoading(false));
   };
 
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = async (ev) => {
+      const base64 = ev.target?.result as string;
+      setPhotoPreview(base64);
+      setUploading(true);
+      try {
+        const res = await uploadApi.photo(base64, file.type);
+        setForm((f) => ({ ...f, photo_url: res.url }));
+      } catch {
+        setPhotoPreview(null);
+      }
+      setUploading(false);
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleSubmit = async () => {
     if (!form.name.trim()) return;
     setSaving(true);
@@ -56,6 +77,7 @@ const PlantCatalog = () => {
     };
     await plantsApi.create(data);
     setShowForm(false);
+    setPhotoPreview(null);
     setForm({ name: "", species: "", emoji: "🌱", water_frequency_days: 7, light: "", humidity: 50, notes: "", variety: "", purchase_date: "", price: "", photo_url: "" });
     setSaving(false);
     loadPlants();
@@ -145,16 +167,37 @@ const PlantCatalog = () => {
             </div>
 
             <div>
-              <p className="text-sm font-medium mb-1">Фото (ссылка)</p>
-              <Input
-                placeholder="https://example.com/photo.jpg"
-                value={form.photo_url}
-                onChange={(e) => setForm({ ...form, photo_url: e.target.value })}
-              />
-              {form.photo_url && (
-                <div className="mt-2 rounded-lg overflow-hidden h-32 bg-secondary">
-                  <img src={form.photo_url} alt="Превью" className="w-full h-full object-cover" onError={(e) => (e.currentTarget.style.display = "none")} />
+              <p className="text-sm font-medium mb-1">Фото</p>
+              {photoPreview || form.photo_url ? (
+                <div className="relative">
+                  <div className="rounded-xl overflow-hidden h-40 bg-secondary">
+                    <img src={photoPreview || form.photo_url} alt="Превью" className="w-full h-full object-cover" />
+                    {uploading && (
+                      <div className="absolute inset-0 bg-black/30 flex items-center justify-center rounded-xl">
+                        <Icon name="Loader2" size={28} className="animate-spin text-white" />
+                      </div>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => { setPhotoPreview(null); setForm({ ...form, photo_url: "" }); }}
+                    className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/50 flex items-center justify-center hover:bg-black/70 transition-colors"
+                  >
+                    <Icon name="X" size={14} className="text-white" />
+                  </button>
                 </div>
+              ) : (
+                <label className="flex flex-col items-center justify-center h-32 rounded-xl border-2 border-dashed border-border bg-secondary/30 cursor-pointer hover:bg-secondary/50 transition-colors">
+                  <Icon name="Camera" size={28} className="text-muted-foreground mb-2" />
+                  <span className="text-sm text-muted-foreground">Нажмите, чтобы загрузить фото</span>
+                  <span className="text-xs text-muted-foreground mt-0.5">JPG, PNG или WebP</span>
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    className="hidden"
+                    onChange={handlePhotoUpload}
+                  />
+                </label>
               )}
             </div>
 
@@ -210,7 +253,7 @@ const PlantCatalog = () => {
 
             <Button
               onClick={handleSubmit}
-              disabled={!form.name.trim() || saving}
+              disabled={!form.name.trim() || saving || uploading}
               className="w-full bg-primary text-primary-foreground"
             >
               {saving ? (
